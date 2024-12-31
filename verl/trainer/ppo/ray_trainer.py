@@ -528,7 +528,12 @@ class RayPPOTrainer(object):
                         critic_remote_path = None if self.config.trainer.default_hdfs_dir is None else os.path.join(
                             self.config.trainer.default_hdfs_dir, 'critic')
                         self.critic_wg.save_checkpoint(critic_local_path, critic_remote_path)
-
+                from torch.utils.tensorboard import SummaryWriter
+                writer = SummaryWriter('/root/autodl-tmp/log')
+                writer.add_scalar('critic/rewards/mean', metrics['critic/rewards/mean'], global_steps)
+                writer.add_scalar('critic/vf_loss', metrics['critic/vf_loss'], global_steps)
+                writer.add_scalar('actor/entropy_loss', metrics['actor/entropy_loss'], global_steps)
+                writer.add_scalar('actor/pg_loss', metrics['actor/pg_loss'], global_steps)
                 global_steps += 1
 
         # perform validation after training
