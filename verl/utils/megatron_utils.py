@@ -216,7 +216,7 @@ class FakeTimers:
     """Disable All Megatron Timing with FakeTimers"""
 
     def __init__(self):
-        from megatron.timers import DummyTimer
+        from megatron.core.timers import DummyTimer
         self.dummy_timer = DummyTimer()
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:

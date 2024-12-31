@@ -33,7 +33,7 @@ from verl.utils.torch_functional import masked_mean, broadcast_dict_tensor, spli
 from verl.utils.megatron import sequence_parallel as sp_utils
 from verl.utils.megatron.optimizer_config import OptimizerConfig
 
-from megatron.optimizer import DistributedOptimizer
+from megatron.training.optimizer import DistributedOptimizer
 from megatron.core import parallel_state as mpu
 from megatron.core.pipeline_parallel import get_forward_backward_func
 
@@ -194,7 +194,7 @@ class MegatronPPOCritic(BasePPOCritic):
                 model=self.critic_module,
                 num_microbatches=n_micro_batch,
                 seq_length=self.config.ppo_micro_batch_size * seq_len,  # in use for pp = 1
-                hidden_size=self.model_config.hidden_size,  # in use for pp = 1
+                # hidden_size=self.model_config.hidden_size,  # in use for pp = 1
                 micro_batch_size=1,  # in use for pp = 1
                 forward_only=forward_only,
             )
@@ -209,12 +209,13 @@ class MegatronPPOCritic(BasePPOCritic):
             self.critic_optimizer.zero_grad()
             # use use_contiguous_buffers_in_local_ddp and no overlap_dp_param_comm
             for chunk in self.critic_module:
-                chunk.zero_grad_buffer(zero_buffer=(not self.critic_optimizer_config.use_distributed_optimizer))
+                # chunk.zero_grad_buffer(zero_buffer=(not self.critic_optimizer_config.use_distributed_optimizer))
+                chunk.zero_grad_buffer()
 
             metric_micro_batch = self.forward_backward_batch(data)
 
-            update_successful, grad_norm, num_zeros_in_grad = self.critic_optimizer.step(
-                self.megatron_config, self.megatron_config.timers)
+            update_successful, grad_norm, num_zeros_in_grad = self.critic_optimizer.step()
+                # self.megatron_config, self.megatron_config.timers)
             if update_successful:
                 # allgather already execute in optimizer.step in new megatron
                 pass
