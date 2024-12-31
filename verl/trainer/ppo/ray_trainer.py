@@ -252,7 +252,7 @@ class RayPPOTrainer(object):
                                          truncation='error')
         self.train_dataloader = DataLoader(dataset=self.train_dataset,
                                            batch_size=self.config.data.train_batch_size,
-                                           shuffle=True,
+                                           shuffle=False,
                                            drop_last=True,
                                            collate_fn=collate_fn)
 
@@ -265,7 +265,7 @@ class RayPPOTrainer(object):
                                        truncation='error')
         self.val_dataloader = DataLoader(dataset=self.val_dataset,
                                          batch_size=self.config.data.val_batch_size,
-                                         shuffle=True,
+                                         shuffle=False,
                                          drop_last=True,
                                          collate_fn=collate_fn)
 
