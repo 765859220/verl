@@ -71,10 +71,10 @@ class AllGatherPPModel:
                 self.pp_models[cur_pp_rank] = nn.ModuleList(unwrap_model(models, (torchDDP, LocalDDP)))
 
             self._build_param_buffer(cur_pp_rank)
-            self._build_param_references(cur_pp_rank, maintain_weight=cur_pp_rank == self.pp_rank)
 
             # TODO: after binding to the memory buffer, we can load the checkpoint here
             if cur_pp_rank != self.pp_rank:
+                self._build_param_references(cur_pp_rank, maintain_weight=cur_pp_rank == self.pp_rank)
                 for model in self.pp_models[cur_pp_rank]:
                     model.eval()
                 self._offload_params_to_cpu(cur_pp_rank)
@@ -82,8 +82,13 @@ class AllGatherPPModel:
     def _build_param_buffer(self, pp_rank):
         """Build the parameter buffer in each pp rank"""
         model = self.pp_models[pp_rank]
-        weight_buffer_meta = get_weight_buffer_meta_from_module(model)
-        self.memory_buffers[pp_rank] = build_memory_buffer(weight_buffer_meta)
+        if pp_rank == self.pp_rank:
+            from verl.utils.memory_buffer import MemoryBuffer
+            source = self._this_rank_models[0].buffers[0].param_data
+            self.memory_buffers[pp_rank] = {torch.bfloat16: MemoryBuffer(source.numel, source.numel, torch.bfloat16, source)}
+        else:
+            weight_buffer_meta = get_weight_buffer_meta_from_module(model)
+            self.memory_buffers[pp_rank] = build_memory_buffer(weight_buffer_meta)
 
     def _build_param_references(self, pp_rank, maintain_weight=False):
         model = self.pp_models[pp_rank]
